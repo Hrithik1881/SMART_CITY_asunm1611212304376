@@ -20,6 +20,6 @@ It helps you:
 Clone the repo and install dependencies:
 
 ```bash
-git clone https://github.com/<your-username>/Eco_Assistant.git
+git clone https://github.com/Hrithik1881/Eco_Assistant.git
 cd Eco_Assistant
 pip install -r requirements.txt
