@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🌿 Eco Assistant & Policy Analyzer 📜</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f9f4;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #4CAF50;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+    }
+    .tabs {
+      display: flex;
+      background: #e8f5e9;
+      cursor: pointer;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 1rem;
+      border-bottom: 3px solid transparent;
+      transition: 0.3s;
+    }
+    .tab.active {
+      border-bottom: 3px solid #4CAF50;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+      padding: 2rem;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    textarea, input[type="file"], input[type="text"] {
+      width: 100%;
+      padding: 0.8rem;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .output {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      min-height: 100px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <header>🌿 Eco Assistant & Policy Analyzer 📜</header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="eco">Eco Tips Generator</div>
+    <div class="tab" data-tab="policy">Policy Summarization</div>
+  </div>
+
+  <!-- Eco Tips Tab -->
+  <div class="tab-content active" id="eco">
+    <label>Environmental Keywords:</label>
+    <input type="text" id="eco-keywords" placeholder="e.g., plastic, water waste, solar...">
+    <button onclick="generateEcoTips()">Generate Tips</button>
+    <h3>Eco Tips:</h3>
+    <div class="output" id="eco-output"></div>
+  </div>
+
+  <!-- Policy Summarization Tab -->
+  <div class="tab-content" id="policy">
+    <label>Or Paste Policy Text:</label>
+    <textarea id="policy-text" rows="5" placeholder="Paste policy document text..."></textarea>
+    <button onclick="summarizePolicy()">Summarize Policy</button>
+    <h3>Policy Summary:</h3>
+    <div class="output" id="policy-output"></div>
+  </div>
+
+  <script>
+    // ---------------- Tab Switching ----------------
+    const tabs = document.querySelectorAll(".tab");
+    const contents = document.querySelectorAll(".tab-content");
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        contents.forEach(c => c.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+      });
+    });
+
+   
+    const encodedKey = "QUl6YVN5Qmpuc25jSDNoandvUDRlZVlwRm5YWnd3NUpBb0NPbTlV";
+    function getApiKey() {
+      return atob(encodedKey); 
+    }
+
+    const MODEL = "gemini-1.5-flash";
+
+    async function callGemini(prompt, maxTokens = 80) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${getApiKey()}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                maxOutputTokens: maxTokens,
+                temperature: 0.2
+              }
+            })
+          }
+        );
+        const data = await response.json();
+        console.log("Gemini API raw response:", data);
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+      } catch (err) {
+        return "Error: " + err.message;
+      }
+    }
+
+    // ---------------- Eco Tips Generator ----------------
+    async function generateEcoTips() {
+      const keywords = document.getElementById("eco-keywords").value.trim();
+      const output = document.getElementById("eco-output");
+      if (!keywords) {
+        output.textContent = "Please enter some keywords.";
+        return;
+      }
+      output.textContent = "Generating...";
+      const prompt = `Give 3 very short eco-friendly tips about ${keywords}. Each tip must be max 1 line, plain words.`;
+      output.textContent = await callGemini(prompt, 60);
+    }
+
+    // ---------------- Policy Summarization ----------------
+    async function summarizePolicy() {
+      const text = document.getElementById("policy-text").value.trim();
+      const output = document.getElementById("policy-output");
+      if (!text) {
+        output.textContent = "Please paste some policy text.";
+        return;
+      }
+      output.textContent = "Summarizing...";
+      const prompt = "Summarize this policy in 3-4 plain sentences. Keep it very short, clear, and simple:\n\n" + text;
+      output.textContent = await callGemini(prompt, 80);
+    }
+  </script>
+</body>
+</html>
